@@ -23,5 +23,5 @@ fig.update_layout(map_style="open-street-map", map_zoom=4, map_center_lat = -33,
     margin={"r":0,"t":0,"l":0,"b":0})
 
 fig.update_traces(cluster=dict(enabled=True))
-plotly.offline.plot(fig, filename='gas.html')
-# fig.show()
+# plotly.offline.plot(fig, filename='gas.html')
+fig.show()

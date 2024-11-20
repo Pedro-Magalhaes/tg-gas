@@ -4,6 +4,8 @@ import pandas as pd
 
 import math
 
+import plotly
+
 # Classe para a estrutura Union-Find (ou Disjoint Set Union - DSU)
 class UnionFind:
     def __init__(self, n):
@@ -83,7 +85,6 @@ def Kruskal(stations):
 class GasGraph(object):
     def __init__(self, vizinhos: pd.DataFrame, cityGates: pd.DataFrame):
         """Recebe a lista com todas as conexões  de vizinhança e os dados dos city gates"""
-        print('Init')
         self.cityGates = cityGates
         # A matriz de vizinho vai ter o custo entre cada nó. Se for -1 a conexão não existe
         self.Mvizinhos = [
@@ -186,16 +187,16 @@ class GasGraph(object):
             chaves = list(self.nameIndex.keys())
             
             # Cria um dicionário para a linha do DataFrame
-            d = {"entry": ponto}  # Adiciona a chave 'entry' com o nome do ponto
+            d = {"entry": f"{self.cityGates.loc[self.cityGates['id'] == ponto]['name'].item()}({ponto})"}  # Adiciona a chave 'entry' com o nome do ponto
             
             # Adiciona as distâncias para cada ponto na chave correspondente
             for chave, distancia in zip(chaves, distancias):
-                d[chave] = distancia
+                gateName = self.cityGates.loc[self.cityGates['id'] == chave]['name'].item()
+                d[f"{gateName}({chave})"] = distancia
             
             # Adiciona o dicionário na lista de linhas
             rowList.append(d)
         
-            print(f'Distancia 96 {distancias[96]} self{self.cityGates.iloc[96]['id']}') 
         # Cria um DataFrame a partir da lista de dicionários
         df = pd.DataFrame(rowList)
         
@@ -221,7 +222,6 @@ class GasGraph(object):
             
             # Adiciona o vértice ao caminho atual
             caminho_atual.append(v)
-            print(f'no atual: {v}, {self.cityGates.iloc[v]['id']}')
             
             # Verifica se chegou ao destino
             if v == destino_idx:
@@ -229,13 +229,11 @@ class GasGraph(object):
                 caminho[:] = caminho_atual[:]
                 distancia_atual += sum(self.Mvizinhos[caminho_atual[i]][caminho_atual[i + 1]] 
                                     for i in range(len(caminho_atual) - 1))
-                print(distancia_atual)
                 return True
             
             # Explora os vizinhos não visitados
             for u in range(len(self.Mvizinhos)):
                 if self.Mvizinhos[v][u] != -1 and not visitados[u]:
-                    print(f'custo {self.Mvizinhos[v][u]}')
                     # distancia_total += self.Mvizinhos[v][u]
                     # Recursão para o próximo vértice
                     if dfs_recursiva(u, destino_idx, caminho_atual, distancia_atual, visitados):
@@ -260,13 +258,14 @@ class GasGraph(object):
             
 
 if __name__ == "__main__":
-    gas_points_raw = pd.read_excel(open("./atualizado.xlsx", "rb"), decimal=',') # Excel com os citygates
+    base_tratada = "./base_tratada_tgs.xlsx"
+
+    gas_points_raw = pd.read_excel(open(base_tratada, "rb"), decimal=',') # Excel com os citygates
     gas_points = gas_points_raw.rename(str.lower,axis='columns')
     gas_points = gas_points.rename(columns={"latitude": "lat", "longitude": "lon"}) # Uso lat e lon no código
 
     gas_points['name'] = gas_points['name'].str.strip()
     gas_points['id'] = gas_points['id'].str.strip()
-    gas_points.dropna()
     gas_points = gas_points.sort_values(by=['id'], ascending=True)
     gas_points = gas_points.drop_duplicates(['id'])  # deleta as linhas com Id duplicado mantendo apenas uma
 
@@ -301,3 +300,5 @@ if __name__ == "__main__":
                 destino = grafo.cityGates.iloc[j]
                 fig.add_trace(go.Scattermap(lon=[origem.lon, destino.lon], lat=[origem.lat, destino.lat], mode='lines', showlegend = False, line=dict(color=lineColor)))
     fig.show()
+
+    plotly.offline.plot(fig, filename="tgs_mst.html", )
